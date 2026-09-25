@@ -1,0 +1,26 @@
+<p class="turn-undead-note">{{description}}</p>
+<table class="turn-undead-table">
+  <thead>
+    <tr>
+      <th>{{localize "ARS-TURN-UNDEAD.target"}}</th>
+      <th>{{localize "ARS-TURN-UNDEAD.category"}}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{#each rows as |row|}}
+      <tr>
+        <td>
+          <img src="{{row.img}}" width="24" height="24" style="vertical-align:middle;margin-right:4px;">
+          {{row.name}}
+        </td>
+        <td class="turn-undead-category" data-index="{{row.index}}">
+          <select name="category-{{row.index}}">
+            {{#each row.categoryOptions as |option|}}
+              <option value="{{option.value}}" {{#if option.selected}}selected{{/if}}>{{option.label}}</option>
+            {{/each}}
+          </select>
+        </td>
+      </tr>
+    {{/each}}
+  </tbody>
+</table>
