@@ -6,6 +6,7 @@ const activeTurnUndeadActors = new Set();
 const ICON_TURNED = "modules/ars-turn-undead/icons/turned.svg";
 const ICON_DESTROYED = "icons/magic/unholy/silhouette-evil-horned-giant.webp";
 const ICON_TURN_UNDEAD = "modules/ars-turn-undead/icons/turn-undead.svg";
+const TURNED_DURATION_SECONDS = 10 * 60; // 1 turn = 10 rounds = 10 minutes in ARS
 
 // ARS v2 turning table: columns are priest levels 1, 2, 3 ... 9, 10-11, 12-13, 14+.
 const TURN_TABLE = [
@@ -215,6 +216,19 @@ function tableResult(category, priestLevel, rollTotal) {
   return { code, threshold: null };
 }
 
+function playerFacingName(token) {
+  const actor = token?.actor;
+  if (!actor) return token?.name ?? "Unknown";
+  const identificationEnabled = game.ars?.config?.settings?.identificationActor
+    ?? game.settings?.get?.("ars", "identificationActor");
+  const isNpc = ["npc", "lootable"].includes(actor.type);
+  const identified = actor.system?.attributes?.identified === true;
+  if (identificationEnabled && isNpc && !identified) {
+    return actor.system?.alias || actor.alias || game.i18n.localize("ARS.unknownActor");
+  }
+  return actor.name || token.name || "Unknown";
+}
+
 async function showTargetDialog(targets) {
   const rows = targets.map((token, index) => {
     const actor = token.actor;
@@ -224,7 +238,7 @@ async function showTargetDialog(targets) {
       index,
       tokenId: token.id,
       actorUuid: actor.uuid,
-      name: actor.name,
+      name: playerFacingName(token),
       img: actor.img,
       hd,
       category,
@@ -295,7 +309,12 @@ function makeEffectData(kind, caster) {
     showIcon: CONST.ACTIVE_EFFECT_SHOW_ICON.ALWAYS,
     statuses: new Set([statusId]),
     changes: [],
-    duration: {},
+    // In ARS, one turn is 10 rounds. Turned undead remain turned for one turn.
+    // Using ARS' native seconds-based duration lets the system expire the effect
+    // automatically while still allowing the GM to delete the Active Effect early.
+    duration: kind === "turned"
+      ? { rounds: TURNED_DURATION_SECONDS, units: "seconds" }
+      : {},
     flags: {
       [TU_FLAG_SCOPE]: {
         turnEffect: kind,
@@ -460,17 +479,22 @@ function tokenCenter(token) {
 
 function hasLineOfSight(sourcePoint, targetPoint) {
   if (!sourcePoint || !targetPoint) return true;
+  if (typeof canvas?.walls?.checkCollision === "function" && typeof Ray === "function") {
+    try {
+      const ray = new Ray(sourcePoint, targetPoint);
+      return !canvas.walls.checkCollision(ray, { type: "sight", mode: "any" });
+    } catch (error) {
+      console.warn(`[${TU_MODULE_ID}] Wall sight-collision test failed; trying polygon fallback.`, error);
+    }
+  }
   const Polygon = foundry?.canvas?.geometry?.ClockwiseSweepPolygon
     ?? foundry?.canvas?.geometry?.PointSourcePolygon;
-  if (!Polygon?.testCollision) {
-    console.warn(`[${TU_MODULE_ID}] Foundry v14 sight-collision API is unavailable; skipping wall LOS test.`);
-    return true;
-  }
+  if (!Polygon?.testCollision) return true;
   try {
     return !Polygon.testCollision(sourcePoint, targetPoint, { type: "sight", mode: "any" });
   } catch (error) {
-    console.error(`[${TU_MODULE_ID}] Sight collision test failed.`, error);
-    return false;
+    console.warn(`[${TU_MODULE_ID}] Sight collision fallback failed; leaving target eligible.`, error);
+    return true;
   }
 }
 
@@ -577,11 +601,49 @@ function refreshTurnUndeadTargets(caster, sourceToken) {
   return eligible;
 }
 
-function closeTurnUndeadActionCard(sourceToken) {
-  const cards = Array.from(sourceToken?.popoutCards ?? []);
-  for (const card of cards) {
-    try { card.close(); }
-    catch (error) { console.warn(`[${TU_MODULE_ID}] Could not close the ARS action card.`, error); }
+async function closeTurnUndeadActionCard(sourceToken) {
+  const tokenObject = sourceToken?.object ?? sourceToken;
+  const tokenId = tokenObject?.id ?? sourceToken?.id;
+  const actorUuid = tokenObject?.actor?.uuid ?? sourceToken?.actor?.uuid;
+  const closed = new Set();
+
+  // ARSCardPopout registers itself in the token's popoutCards collection only
+  // when a Combat HUD exists. Close those cards first when available.
+  for (const card of Array.from(tokenObject?.popoutCards ?? [])) {
+    if (!card || closed.has(card)) continue;
+    try {
+      await card.close();
+      closed.add(card);
+    } catch (error) {
+      console.warn(`[${TU_MODULE_ID}] Could not close the ARS action card.`, error);
+    }
+  }
+
+  // ARS v2 uses Foundry's ApplicationV2 instance registry for every rendered
+  // ARSCardPopout. This registry is a Map, not a callable function.
+  const instances = foundry?.applications?.instances;
+  if (!instances?.values) return;
+
+  for (const app of Array.from(instances.values())) {
+    if (!app?.rendered || closed.has(app)) continue;
+
+    const classes = app.constructor?.DEFAULT_OPTIONS?.classes ?? app.options?.classes ?? [];
+    const classList = Array.isArray(classes) ? classes : [classes];
+    const isArsPopout = app.constructor?.name === "ARSCardPopout"
+      || classList.includes("popoutCard");
+    if (!isArsPopout) continue;
+
+    const appToken = app.token?.object ?? app.token;
+    const appTokenId = appToken?.id ?? app.token?.id;
+    const appActorUuid = app.actor?.uuid ?? appToken?.actor?.uuid;
+    if ((tokenId && appTokenId === tokenId) || (actorUuid && appActorUuid === actorUuid)) {
+      try {
+        await app.close();
+        closed.add(app);
+      } catch (error) {
+        console.warn(`[${TU_MODULE_ID}] Could not close the ARS action popout.`, error);
+      }
+    }
   }
 }
 
@@ -597,7 +659,6 @@ async function performTurnUndead(sourceActor, sourceToken) {
   const executionKey = caster.uuid;
   if (activeTurnUndeadActors.has(executionKey)) return;
   activeTurnUndeadActors.add(executionKey);
-  closeTurnUndeadActionCard(sourceToken);
 
   try {
     const profile = await getTurningProfile(caster);
@@ -672,6 +733,7 @@ async function performTurnUndead(sourceActor, sourceToken) {
     }
 
     await postResults(caster, profile, resolved, affected, rollTotal, maxAffected, additionalTurned, dStarGroups);
+    await closeTurnUndeadActionCard(sourceToken);
 
     for (const entry of affected) {
       const kind = entry.result === "T" ? "turned" : "destroyed";
