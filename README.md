@@ -1,28 +1,111 @@
 # ARS Turn Undead
 
-A custom **Turn Undead** module designed for the **ARS (Advanced Old School RPG System)** framework in Foundry VTT. It integrates natively with the core action workflows to handle cleric and paladin turning mechanics smoothly without overriding core systems.
+A custom **Turn Undead** module for the **ARS (Advanced Roleplaying System)** in Foundry Virtual Tabletop.
+
+The module integrates with the native ARS action workflow to automate undead turning without replacing or overriding the system's core targeting and action mechanics.
 
 ## 🚀 Features
 
-* **Native Workflow Integration:** Uses the standard **Cast Shape → action/macro** flow instead of replacing the ARS targeting system.
-* **Full Turn Undead Mechanics:**
-  * Handles normal Turn Undead table results.
-  * Supports `T` (Turned) and `D` (Destroyed) conditions.
-  * Implements `D*` rules (affected creatures destroyed, plus **2d4 additional creatures** of the same type turned).
-  * Limits targets to a maximum of **2d6 affected creatures** within a **120 ft circular area**.
-* **Smart Filtering:** Automatically excludes non-undead targets, the caster, dead creatures, and already-Turned undead.
-* **Line of Sight (LOS):** Checks walls and closed doors so obstructed undead are not affected.
-* **Class & Progression Support:** Correctly calculates effective priest levels for Paladins.
-* **Custom Status Effect:** Applies a custom **Turned** Active Effect lasting **10 rounds (1 turn)**, which the DM can easily remove manually if the effect is broken (e.g., if forced to approach within 10 feet).
+### Native ARS Integration
+
+* Integrates directly with the standard **Cast Shape → Action/Macro** workflow.
+* Preserves the native ARS action flow instead of replacing core system functionality.
+* Designed specifically for **ARS v2**.
+
+### Turn Undead Automation
+
+* Automatically processes the ARS Turn Undead table.
+* Supports the following results:
+
+  * **T** — Turned
+  * **D** — Destroyed
+  * **D*** — Affected creatures are destroyed, plus **2d4 additional creatures of the same category are Turned**.
+* Limits the normal affected group to a maximum of **2d6 creatures**.
+* Uses a **120 ft circular area** for the Turn Undead effect.
+* Automatically rolls the required dice and applies the resulting effects.
+
+### Intelligent Target Filtering
+
+The module automatically excludes:
+
+* The caster.
+* Non-undead creatures.
+* Dead creatures.
+* Undead that have already been Turned.
+* Undead that cannot be reached because of walls or closed doors.
+
+### Line of Sight
+
+Turn Undead respects the physical layout of the scene:
+
+* Walls are taken into account.
+* Closed doors block the effect.
+* Undead hidden behind an obstruction are not included among the affected targets.
+
+### Cleric & Paladin Support
+
+* Uses the character's effective priest level when determining the Turn Undead result.
+* Correctly applies the ARS Paladin progression, including the **effective priest level penalty**.
+
+### Turned Status
+
+Turned undead receive a dedicated **Turned** Active Effect.
+
+* Duration: **10 rounds (1 turn / 10 minutes)**.
+* The effect can be removed manually by the DM.
+* This allows the DM to handle situations where the turning is broken early, such as when a Turned undead is forced to approach within 10 feet.
+
+### Unidentified Creatures
+
+When ARS creature identification is disabled for players, the module respects the system's identification state and uses the appropriate player-facing creature name.
+
+---
+
+## 📦 Installation
+
+### Foundry VTT — Manifest Installation
+
+The easiest way to install the module is through Foundry VTT's **Install Module** window.
+
+Copy this **Manifest URL**:
+
+[ARS Turn Undead — Manifest URL](https://raw.githubusercontent.com/manuelmartinezesclapez-glitch/Turn-Undead-module-for-ARS/refs/heads/main/ars-turn-undead/module.json?utm_source=chatgpt.com)
+
+In Foundry:
+
+1. Open **Add-on Modules → Install Module**.
+2. Paste the Manifest URL into **Manifest URL**.
+3. Click **Install**.
+4. Enable **ARS Turn Undead** in your world.
+
+### Direct Installation
+
+The current release can also be downloaded directly from the GitHub release:
+
+[ARS Turn Undead — v1.2.8 ZIP](https://github.com/manuelmartinezesclapez-glitch/Turn-Undead-module-for-ARS/releases/download/v1.2.8/ars-turn-undead-v1.2.8.zip?utm_source=chatgpt.com)
+
+For normal Foundry installation and future updates, the **Manifest URL method is recommended**.
+
+---
 
 ## 🛠️ Compatibility
 
-Tested and verified in the following environment:
-* **Foundry VTT:** v14
-* **ARS System:** v2 (Specifically tested with version `2026.09.21`)
+Tested and verified with:
 
-*Note: It might work with OSRIC or ARS v1 due to shared framework logic, but these variants are currently untested and unverified.*
+* **Foundry Virtual Tabletop:** v14
+* **ARS:** v2
+* **ARS version tested:** `2026.09.21`
 
-## ⚠️ Known Rough Edges
+### Untested Systems
 
-* **Category Detection:** Automatic undead category detection is not always reliable with existing ARS actors (e.g., zombies might register as ghouls, or ghasts as shadows). However, the category can be adjusted manually in the dialogue before committing the action.
+The module may potentially work with **OSRIC** or **ARS v1** because of shared framework functionality, but these systems are currently **untested and unsupported**.
+
+---
+
+## ⚠️ Known Limitations
+
+### Automatic Category Detection
+
+Automatic undead category detection is not always reliable with existing ARS actors.
+
+For example, some creatures may be detected as the wrong category depending on how their actor data is configu
