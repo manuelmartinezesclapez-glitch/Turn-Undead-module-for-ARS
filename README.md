@@ -44,8 +44,11 @@ Turn Undead respects the physical layout of the scene:
 
 ### Cleric & Paladin Support
 
+* Detects active **Cleric/Priest** and **Paladin** classes on the character.
 * Uses the character's effective priest level when determining the Turn Undead result.
-* Correctly applies the ARS Paladin progression, including the **effective priest level penalty**.
+* Clerics and priests use their full class level.
+* Paladins use the ARS progression with the **effective priest level penalty of 2 levels**.
+* Uses the highest effective eligible level when a character has multiple eligible classes.
 
 ### Turned Status
 
@@ -69,7 +72,7 @@ The easiest way to install the module is through Foundry VTT's **Install Module*
 
 Copy this **Manifest URL**:
 
-[ARS Turn Undead — Manifest URL](https://raw.githubusercontent.com/manuelmartinezesclapez-glitch/Turn-Undead-module-for-ARS/refs/heads/main/ars-turn-undead/module.json?utm_source=chatgpt.com)
+[ARS Turn Undead — Manifest URL](https://raw.githubusercontent.com/manuelmartinezesclapez-glitch/Turn-Undead-module-for-ARS/refs/heads/main/ars-turn-undead/module.json)
 
 In Foundry:
 
@@ -82,7 +85,7 @@ In Foundry:
 
 The current release can also be downloaded directly from the GitHub release:
 
-[ARS Turn Undead — v1.2.8 ZIP](https://github.com/manuelmartinezesclapez-glitch/Turn-Undead-module-for-ARS/releases/download/v1.2.8/ars-turn-undead-v1.2.8.zip?utm_source=chatgpt.com)
+[ARS Turn Undead — v1.2.9 ZIP](https://github.com/manuelmartinezesclapez-glitch/Turn-Undead-module-for-ARS/releases/download/v1.2.9/ars-turn-undead-v1.2.9.zip)
 
 For normal Foundry installation and future updates, the **Manifest URL method is recommended**.
 
@@ -94,7 +97,7 @@ Tested and verified with:
 
 * **Foundry Virtual Tabletop:** v14
 * **ARS:** v2
-* **ARS version tested:** `2026.09.21`
+* **ARS version tested:** `2026.09.29`
 
 ### Untested Systems
 
@@ -108,4 +111,31 @@ The module may potentially work with **OSRIC** or **ARS v1** because of shared f
 
 Automatic undead category detection is not always reliable with existing ARS actors.
 
-For example, some creatures may be detected as the wrong category depending on how their actor data is configu
+For example, some creatures may be detected as the wrong category depending on how their actor data is configured.
+
+The module currently uses the undead category information available through ARS and does not modify or replace the system's creature data.
+
+### Manual Correction
+
+When necessary, the Turn Undead confirmation dialog allows the DM to review and correct the detected undead category before applying the result.
+
+This allows encounters to be handled correctly without modifying the underlying ARS actor.
+
+---
+
+## 📋 Version
+
+**Current version: 1.2.9**
+
+### v1.2.9
+
+* Fixed Turn Undead detection for Cleric/Priest characters with newer ARS versions.
+* Improved recognition of priest-class names.
+* Preserved the existing Paladin effective-level calculation.
+* No changes to the native ARS targeting or action workflow.
+
+---
+
+## 📄 License
+
+This module is provided for use with Foundry Virtual Tabletop and the ARS system.
