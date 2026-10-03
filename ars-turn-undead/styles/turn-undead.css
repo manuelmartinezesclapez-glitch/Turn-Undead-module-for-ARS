@@ -1,0 +1,31 @@
+.ars-turn-undead-dialog .turn-undead-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.ars-turn-undead-dialog .turn-undead-table th,
+.ars-turn-undead-dialog .turn-undead-table td {
+  padding: 4px 6px;
+  vertical-align: middle;
+}
+
+.ars-turn-undead-dialog .turn-undead-hd {
+  width: 70px;
+}
+
+.ars-turn-undead-dialog .turn-undead-note {
+  margin: 0 0 8px;
+  opacity: 0.85;
+}
+
+.ars-tu-chat-card table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.ars-tu-chat-card th,
+.ars-tu-chat-card td {
+  padding: 3px 5px;
+  border-bottom: 1px solid rgba(128,128,128,.35);
+  text-align: left;
+}
