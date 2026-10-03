@@ -85,7 +85,7 @@ In Foundry:
 
 The current release can also be downloaded directly from the GitHub release:
 
-[ARS Turn Undead — v1.2.9 ZIP](https://github.com/manuelmartinezesclapez-glitch/Turn-Undead-module-for-ARS/releases/download/v1.2.9/ars-turn-undead-v1.2.9.zip)
+[ARS Turn Undead — v1.2.9 ZIP](https://github.com/manuelmartinezesclapez-glitch/Turn-Undead-module-for-ARS/releases/download/v1.2.9/ars-turn-undead-v1.2.9.1.zip)
 
 For normal Foundry installation and future updates, the **Manifest URL method is recommended**.
 
