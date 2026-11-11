@@ -8,59 +8,75 @@ The module integrates with the native ARS action workflow to automate undead tur
 
 ### Native ARS Integration
 
-* Integrates directly with the standard **Cast Shape → Action/Macro** workflow.
-* Preserves the native ARS action flow instead of replacing core system functionality.
-* Designed specifically for **ARS v2**.
+- Integrates directly with the standard **Cast Shape → Action/Macro** workflow.
+- Preserves the native ARS action flow instead of replacing core system functionality.
+- Designed specifically for **ARS v2**.
+- Maintains and updates the Turn Undead world item when required.
 
 ### Turn Undead Automation
 
-* Automatically processes the ARS Turn Undead table.
-* Supports the following results:
-
-  * **T** — Turned
-  * **D** — Destroyed
-  * **D*** — Affected creatures are destroyed, plus **2d4 additional creatures of the same category are Turned**.
-* Limits the normal affected group to a maximum of **2d6 creatures**.
-* Uses a **120 ft circular area** for the Turn Undead effect.
-* Automatically rolls the required dice and applies the resulting effects.
+- Automatically processes the ARS Turn Undead table.
+- Supports the following results:
+  - **T** — Turned.
+  - **D** — Destroyed.
+  - **D\*** — Affected creatures are destroyed, plus **2d4 additional creatures of the same category are Turned**.
+- Limits the normal affected group to a maximum of **2d6 creatures**.
+- Uses a **120 ft circular area** for the Turn Undead effect.
+- Uses one d20 roll for all undead categories in the same turning attempt.
+- Automatically rolls the required dice and applies the resulting effects.
+- In mixed groups, applies the normal affected-creature limit to the lowest-HD creatures first.
 
 ### Intelligent Target Filtering
 
 The module automatically excludes:
 
-* The caster.
-* Non-undead creatures.
-* Dead creatures.
-* Undead that have already been Turned.
-* Undead that cannot be reached because of walls or closed doors.
+- The caster.
+- Non-undead creatures.
+- Dead creatures.
+- Undead that have already been Turned.
+- Undead outside the affected area.
+- Undead hidden behind walls or closed doors.
+
+Eligible targets are refreshed from the area placed through the native ARS Cast Shape action.
 
 ### Line of Sight
 
 Turn Undead respects the physical layout of the scene:
 
-* Walls are taken into account.
-* Closed doors block the effect.
-* Undead hidden behind an obstruction are not included among the affected targets.
+- Walls are taken into account.
+- Closed doors block the effect.
+- Undead hidden behind an obstruction are not included among the affected targets.
 
 ### Cleric & Paladin Support
 
-* Detects active **Cleric/Priest** and **Paladin** classes on the character.
-* Uses the character's effective priest level when determining the Turn Undead result.
-* Clerics and priests use their full class level.
-* Paladins use the ARS progression with the **effective priest level penalty of 2 levels**.
-* Uses the highest effective eligible level when a character has multiple eligible classes.
+- Detects active **Cleric/Priest** and **Paladin** classes on the character.
+- Uses the character's effective priest level when determining the Turn Undead result.
+- Clerics and priests use their full class level.
+- Paladins use the ARS progression with the **effective priest level penalty of 2 levels**.
+- Uses the highest effective eligible level when a character has multiple eligible classes.
+- If no eligible class is detected, the DM can enter a turning level manually and optionally apply the Paladin level adjustment.
 
-### Turned Status
+### Turned and Destroyed Effects
 
 Turned undead receive a dedicated **Turned** Active Effect.
 
-* Duration: **10 rounds (1 turn / 10 minutes)**.
-* The effect can be removed manually by the DM.
-* This allows the DM to handle situations where the turning is broken early, such as when a Turned undead is forced to approach within 10 feet.
+- Duration: **10 rounds (1 turn / 10 minutes)**.
+- The effect can be removed manually by the DM.
+- This allows the DM to handle situations where the turning is broken early, such as when a Turned undead is forced to approach within 10 feet.
+
+Destroyed undead receive a **Destroyed** Active Effect. Their hit points are also set to 0 when the module can identify the actor's HP field.
+
+Effects can be applied through the GM when required, allowing players without direct ownership of an affected actor to resolve the result when an active GM is available.
 
 ### Unidentified Creatures
 
 When ARS creature identification is disabled for players, the module respects the system's identification state and uses the appropriate player-facing creature name.
+
+### Target Review
+
+Before resolving the turning attempt, the DM can review eligible targets and correct an automatically detected undead category.
+
+This is useful when an existing actor's name or Hit Dice do not accurately represent its category on the ARS turning table.
 
 ---
 
@@ -83,9 +99,9 @@ In Foundry:
 
 ### Direct Installation
 
-The current release can also be downloaded directly from the GitHub release:
+The latest published release can be downloaded from:
 
-[ARS Turn Undead — v1.2.9 ZIP](https://github.com/manuelmartinezesclapez-glitch/Turn-Undead-module-for-ARS/releases/download/v1.2.9/ars-turn-undead-v1.2.9.1.zip)
+[ARS Turn Undead — Latest Release](https://github.com/manuelmartinezesclapez-glitch/Turn-Undead-module-for-ARS/releases/latest)
 
 For normal Foundry installation and future updates, the **Manifest URL method is recommended**.
 
@@ -93,11 +109,11 @@ For normal Foundry installation and future updates, the **Manifest URL method is
 
 ## 🛠️ Compatibility
 
-Tested and verified with:
+Current release compatibility:
 
-* **Foundry Virtual Tabletop:** v14
-* **ARS:** v2
-* **ARS version tested:** `2026.09.29`
+- **Foundry Virtual Tabletop:** v14.
+- **ARS:** v2.
+- **ARS minimum version:** `2026.11.09`.
 
 ### Untested Systems
 
@@ -109,33 +125,6 @@ The module may potentially work with **OSRIC** or **ARS v1** because of shared f
 
 ### Automatic Category Detection
 
-Automatic undead category detection is not always reliable with existing ARS actors.
+Automatic undead category detection uses actor Hit Dice and, where applicable, exact matches against standard undead names on the ARS turning table.
 
-For example, some creatures may be detected as the wrong category depending on how their actor data is configured.
-
-The module currently uses the undead category information available through ARS and does not modify or replace the system's creature data.
-
-### Manual Correction
-
-When necessary, the Turn Undead confirmation dialog allows the DM to review and correct the detected undead category before applying the result.
-
-This allows encounters to be handled correctly without modifying the underlying ARS actor.
-
----
-
-## 📋 Version
-
-**Current version: 1.2.9**
-
-### v1.2.9
-
-* Fixed Turn Undead detection for Cleric/Priest characters with newer ARS versions.
-* Improved recognition of priest-class names.
-* Preserved the existing Paladin effective-level calculation.
-* No changes to the native ARS targeting or action workflow.
-
----
-
-## 📄 License
-
-This module is provided for use with Foundry Virtual Tabletop and the ARS system.
+For example, an actor named exactly `Zombie` is assigned to the Zombie category. Other names and
