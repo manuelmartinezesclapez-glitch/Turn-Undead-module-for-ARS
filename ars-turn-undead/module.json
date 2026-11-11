@@ -2,8 +2,7 @@
   "id": "ars-turn-undead",
   "title": "ARS - Turn Undead",
   "description": "ARS v2 Turn Undead automation for the Advanced Roleplaying System.",
-  "version": "1.2.9",
-  "download": "https://github.com/manuelmartinezesclapez-glitch/Turn-Undead-module-for-ARS/releases/download/v1.2.9/ars-turn-undead-v1.2.9.1.zip",
+  "version": "1.3.1",
   "authors": [
     {
       "name": "Manuel"
@@ -19,7 +18,7 @@
         "id": "ars",
         "type": "system",
         "compatibility": {
-          "minimum": "2026.09.29"
+          "minimum": "2026.11.09"
         }
       }
     ]

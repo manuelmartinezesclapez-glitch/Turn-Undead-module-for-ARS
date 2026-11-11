@@ -46,6 +46,19 @@ function localize(key, data = {}) {
   return game.i18n.has(full) ? game.i18n.format(full, data) : key;
 }
 
+/**
+ * Read form controls from a DialogV2 callback without assuming a particular
+ * callback context. Foundry 14 passes the clicked button as the second
+ * argument; retaining the dialog fallback makes this resilient to minor
+ * ApplicationV2 callback changes.
+ */
+function dialogFormFromCallback(button, dialog) {
+  if (button?.form) return button.form;
+  const element = dialog?.element;
+  if (element?.querySelector) return element.querySelector("form");
+  return null;
+}
+
 function normalizeName(name) {
   return String(name ?? "")
     .trim()
@@ -189,17 +202,18 @@ async function getTurningProfile(actor) {
         label: localize("turn"),
         icon: "fas fa-sun",
         default: true,
-        callback: (event, button) => {
-          const form = button.form;
-          const level = Number(form.elements.turningLevel?.value ?? 0);
-          const paladin = !!form.elements.paladinRule?.checked;
+        callback: (event, button, dialog) => {
+          const form = dialogFormFromCallback(button, dialog);
+          if (!form) return null;
+          const level = Number(form.elements.namedItem("turningLevel")?.value ?? 0);
+          const paladin = !!form.elements.namedItem("paladinRule")?.checked;
           return { level, paladin };
         }
       }
     ]
   });
 
-  if (!result) return null;
+  if (!result || typeof result !== "object") return null;
   const priestLevel = result.paladin ? result.level - 2 : result.level;
   return {
     type: result.paladin ? "paladin" : "manual",
@@ -274,10 +288,11 @@ async function showTargetDialog(targets) {
         label: localize("turn"),
         icon: "fas fa-sun",
         default: true,
-        callback: (event, button) => {
-          const form = button.form;
+        callback: (event, button, dialog) => {
+          const form = dialogFormFromCallback(button, dialog);
+          if (!form) return null;
           return rows.map(row => {
-            const rawCategory = Number(form.elements[`category-${row.index}`]?.value);
+            const rawCategory = Number(form.elements.namedItem(`category-${row.index}`)?.value);
             const category = Number.isInteger(rawCategory) && rawCategory >= 0 && rawCategory < CATEGORY_LABELS.length
               ? rawCategory
               : row.category;
@@ -293,27 +308,22 @@ async function showTargetDialog(targets) {
   });
 }
 
+// Do not register a custom status in CONFIG.statusEffects. ARS/Foundry may
+// expose this collection through a proxied configuration object; mutating it
+// during init can interfere with Foundry's later canvas/texture initialization.
+// The Active Effect itself carries its own icon and module flag, so no global
+// status registration is required for Turn Undead to work.
 function ensureTurnedStatus() {
-  if (!Array.isArray(CONFIG.statusEffects)) return;
-  if (CONFIG.statusEffects.some(status => status?.id === "turned")) return;
-  CONFIG.statusEffects.push({
-    id: "turned",
-    name: "ARS-TURN-UNDEAD.turned",
-    img: ICON_TURNED
-  });
-  console.info(`[${TU_MODULE_ID}] Registered custom status effect: turned`);
+  return true;
 }
 
 function makeEffectData(kind, caster) {
   const statusId = kind === "turned" ? "turned" : "dead";
-  const status = CONFIG.statusEffects.find(effect => effect?.id === statusId);
-
   return {
     name: kind === "turned" ? localize("turned") : localize("destroyed"),
-    img: status?.img ?? (kind === "turned" ? ICON_TURNED : ICON_DESTROYED),
+    img: kind === "turned" ? ICON_TURNED : ICON_DESTROYED,
     disabled: false,
     showIcon: CONST.ACTIVE_EFFECT_SHOW_ICON.ALWAYS,
-    statuses: new Set([statusId]),
     changes: [],
     // In ARS, one turn is 10 rounds. Turned undead remain turned for one turn.
     // Using ARS' native seconds-based duration lets the system expire the effect
@@ -383,17 +393,9 @@ async function applyEffectAsGM(actorUuid, effectData) {
   // Use the same ActiveEffect creation path as ARS itself. This ensures the
   // ARS ActiveEffect data model receives the status Set and icon/display data
   // exactly as native ARS effects do.
-  await ActiveEffect.implementation.create(effectData, { parent: actor });
-
-  // Explicitly activate the status as well. ARS exposes the status through the
-  // actor's status set, which is what the token HUD and token display consume.
-  const statusId = kind === "turned" ? "turned" : "dead";
-  if (typeof actor.toggleStatusEffect === "function") {
-    const alreadyActive = actor.effects.some(effect =>
-      effect.statuses?.has?.(statusId) && !effect.disabled
-    );
-    if (!alreadyActive) await actor.toggleStatusEffect(statusId, { active: true });
-  }
+  // Use the parent document API rather than the implementation class. This
+  // is the supported embedded-document path across Foundry V14 builds.
+  await actor.createEmbeddedDocuments("ActiveEffect", [effectData]);
 
   return true;
 }
@@ -917,23 +919,36 @@ Hooks.on("createRegion", (region) => {
 // and can cause the macro action to run in the wrong place.
 
 Hooks.once("init", () => {
-  ensureTurnedStatus();
-  const module = game.modules.get(TU_MODULE_ID);
-  module.api = {
-    turnUndead: performTurnUndead,
-    createTurnUndeadItem: async () => {
-      if (!game.user.isGM) return null;
-      const existing = game.items.find(item => item.getFlag?.(TU_FLAG_SCOPE, TU_ITEM_FLAG));
-      return existing ?? Item.create(abilityData());
-    },
-    getTurningProfile,
-    inferCategory,
-    TURN_TABLE
-  };
+  // Keep init side effects isolated: a module initialization error must not
+  // interrupt other Foundry modules or the canvas startup sequence.
+  try {
+    ensureTurnedStatus();
+  } catch (error) {
+    console.error(`[${TU_MODULE_ID}] Initialization failed while preparing status support.`, error);
+  }
 });
 
 Hooks.once("ready", async () => {
-  registerSocket();
-  await ensureWorldItem();
+  try {
+    const module = game.modules.get(TU_MODULE_ID);
+    if (module) {
+      module.api = {
+        turnUndead: performTurnUndead,
+        createTurnUndeadItem: async () => {
+          if (!game.user.isGM) return null;
+          const existing = game.items.find(item => item.getFlag?.(TU_FLAG_SCOPE, TU_ITEM_FLAG));
+          return existing ?? Item.create(abilityData());
+        },
+        getTurningProfile,
+        inferCategory,
+        TURN_TABLE
+      };
+    }
+    registerSocket();
+    await ensureWorldItem();
+  } catch (error) {
+    console.error(`[${TU_MODULE_ID}] Ready initialization failed.`, error);
+    ui.notifications?.error?.("ARS Turn Undead: initialization failed. See the console for details.");
+  }
 });
 
